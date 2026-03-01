@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web → App Converter | Kokushibo</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Poppins:wght@300;400;600;700&display=swap');
+        body{font-family:'Poppins',sans-serif;background:linear-gradient(135deg,#0a0a23 0%,#1a0d2e 50%,#2d1b69 100%);color:#00ff88;overflow:hidden;height:100vh;position:relative}
+        
+        /* Neon Effects */
+        .neon-glow{box-shadow:0 0 30px #00ff88,0 0 60px #ff00ff,0 0 90px #00ccff}
+        .neon-text{text-shadow:0 0 15px #00ff88,0 0 30px #ff00ff}
+        
+        /* Header */
+        .header{position:fixed;top:0;left:0;width:100%;background:rgba(15,15,45,0.95);backdrop-filter:blur(20px);padding:15px 20px;z-index:1000;border-bottom:2px solid rgba(0,255,136,0.5);neon-glow}
+        .header h1{font-family:'Orbitron',sans-serif;font-size:24px;font-weight:900;background:linear-gradient(45deg,#00ff88,#ff00ff,#00ccff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin:0}
+        
+        /* Converter Panel */
+        .converter-panel{padding:80px 20px 20px;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+        .input-section{background:rgba(20,20,50,0.95);border:2px solid rgba(0,255,136,0.4);border-radius:25px;padding:30px;margin-bottom:25px;neon-glow;transition:all 0.3s}
+        .input-group{margin-bottom:20px}
+        .input-group label{display:block;margin-bottom:8px;font-weight:600;color:#00ff88}
+        .input-field{width:100%;padding:15px;border:2px solid rgba(0,255,136,0.3);border-radius:15px;background:rgba(0,0,0,0.5);color:#00ff88;font-size:16px;font-family:inherit;transition:all 0.3s}
+        .input-field:focus{outline:none;border-color:#00ff88;box-shadow:0 0 20px rgba(0,255,136,0.5)}
+        .app-icon-preview{width:80px;height:80px;border-radius:20px;margin:15px auto;display:block;object-fit:cover;border:3px solid #00ff88;neon-glow}
+        
+        .generate-btn{width:100%;background:linear-gradient(45deg,#00ff88,#ff00ff,#00ccff);color:#000;border:none;padding:20px;border-radius:25px;font-size:20px;font-weight:900;font-family:'Orbitron',sans-serif;cursor:pointer;transition:all 0.4s;margin-top:20px;text-transform:uppercase;letter-spacing:2px;position:relative;overflow:hidden}
+        .generate-btn:hover{transform:scale(1.05) translateY(-5px);box-shadow:0 20px 50px rgba(0,255,136,0.7)}
+        .generate-btn:disabled{background:#444;cursor:not-allowed;transform:none}
+        
+        /* Output */
+        .output-section{display:none;background:rgba(20,20,50,0.98);border:3px solid rgba(0,255,136,0.6);border-radius:30px;padding:30px;neon-glow;margin-top:20px}
+        .code-box{background:rgba(0,0,0,0.8);border:2px solid #00ff88;border-radius:20px;padding:20px;margin:20px 0;overflow:auto;max-height:400px;font-family:'Courier New',monospace;font-size:14px;color:#00ff88;white-space:pre-wrap;line-height:1.6;position:relative}
+        .copy-btn{background:#00ff88;color:#000;border:none;padding:10px 20px;border-radius:20px;cursor:pointer;font-weight:600;margin-top:15px;transition:all 0.3s;float:right}
+        .copy-btn:hover{background:#ff00ff;transform:scale(1.05)}
+        
+        /* Hidden Iframe Container */
+        .iframe-container{position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;background:#000;opacity:0;visibility:hidden;transition:all 0.5s}
+        .iframe-container.active{opacity:1;visibility:visible}
+        #hiddenIframe{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:95%;height:95%;border-radius:20px;border:5px solid rgba(0,255,136,0.8);box-shadow:0 0 100px rgba(0,255,136,0.5)}
+        
+        /* Responsive */
+        @media(max-width:768px){.converter-panel{padding:70px 15px 15px}}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔥 KOKUSHIBO Web → App Converter</h1>
+    </div>
+
+    <div class="converter-panel">
+        <div class="input-section">
+            <div class="input-group">
+                <label>📱 App Name</label>
+                <input type="text" class="input-field" id="appName" placeholder="Kokushibo Anime Hub" value="Kokushibo Anime Hub">
+            </div>
+            <div class="input-group">
+                <label>🎨 App Icon (URL)</label>
+                <input type="url" class="input-field" id="appIcon" placeholder="https://i.imgur.com/your-icon.png">
+            </div>
+            <div class="input-group">
+                <label>🌐 Main Web URL</label>
+                <input type="url" class="input-field" id="mainUrl" placeholder="https://your-main-site.vercel.app">
+            </div>
+            <div class="input-group">
+                <label>🔗 Hidden URLs (JSON Array)</label>
+                <textarea class="input-field" id="hiddenUrls" rows="4" placeholder='["https://panel1.vercel.app","https://panel2.netlify.app","https://other-site.com"]'>[]</textarea>
+            </div>
+            <button class="generate-btn" onclick="generateApp()">🚀 GENERATE APP CODE</button>
+            <img id="iconPreview" class="app-icon-preview" style="display:none">
+        </div>
+
+        <div class="output-section" id="outputSection">
+            <h3 style="color:#00ff88;margin-bottom:15px;font-family:'Orbitron';font-size:22px">📥 Your App Code (Copy & Deploy)</h3>
+            <div class="code-box" id="appCode"></div>
+            <button class="copy-btn" onclick="copyCode()">📋 COPY CODE</button>
+        </div>
+    </div>
+
+    <!-- Hidden Iframe for Link Masking -->
+    <div class="iframe-container" id="iframeContainer">
+        <iframe id="hiddenIframe" src="about:blank" frameborder="0"></iframe>
+    </div>
+
+    <script>
+        // Icon Preview
+        document.getElementById('appIcon').addEventListener('input', function() {
+            const url = this.value;
+            const preview = document.getElementById('iconPreview');
+            if(url) {
+                preview.src = url;
+                preview.style.display = 'block';
+            } else {
+                preview.style.display = 'none';
+            }
+        });
+
+        function generateApp() {
+            const appName = document.getElementById('appName').value || 'My App';
+            const appIcon = document.getElementById('appIcon').value || 'https://i.imgur.com/default-icon.png';
+            const mainUrl = document.getElementById('mainUrl').value || 'https://example.com';
+            let hiddenUrls;
+            
+            try {
+                hiddenUrls = JSON.parse(document.getElementById('hiddenUrls').value || '[]');
+            } catch(e) {
+                alert('❌ Invalid JSON in Hidden URLs! Use: ["url1","url2"]');
+                return;
+            }
+
+            const appCode = `<!DOCTYPE html>
+<html>
+<head>
+    <title>${appName}</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <style>body,html{margin:0;padding:0;height:100%;overflow:hidden}iframe{width:100%;height:100%;border:none}</style>
+</head>
+<body>
+    <iframe src="${mainUrl}" id="mainFrame"></iframe>
+    <script>
+        // All URLs HIDDEN - Never exposed in address bar
+        const hiddenUrls = ${JSON.stringify(hiddenUrls)};
+        const mainFrame = document.getElementById('mainFrame');
+        
+        // Intercept ALL link clicks & form submits
+        window.addEventListener('click', function(e) {
+            const link = e.target.closest('a[href]');
+            if(link && link.href) {
+                e.preventDefault();
+                loadHiddenUrl(link.href);
+                return false;
+            }
+        }, true);
+        
+        // Intercept forms
+        window.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formAction = e.target.action || e.target.closest('form').action;
+            if(formAction) loadHiddenUrl(formAction);
+        }, true);
+        
+        // Load URL in HIDDEN iframe (address bar stays same)
+        function loadHiddenUrl(url) {
+            // Check if URL matches any hidden URL pattern
+            const targetUrl = hiddenUrls.find(h => 
+                url.includes(h) || h.includes(url) || url === h
+            ) || url;
+            
+            mainFrame.src = targetUrl;
+            console.log('🔒 Link loaded:', targetUrl); // Only in console
+        }
+        
+        // Block direct URL access
+        window.onbeforeunload = function() {
+            return "Stay in app!";
+        };
+        
+        // PWA Ready
+        if('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js');
+        }
+    </script>
+</body>
+</html>`;
+
+            document.getElementById('appCode').textContent = appCode;
+            document.getElementById('outputSection').style.display = 'block';
+            document.querySelector('.converter-panel').scrollTop = 9999;
+        }
+
+        function copyCode() {
+            const code = document.getElementById('appCode').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                const btn = event.target;
+                const original = btn.textContent;
+                btn.textContent = '✅ COPIED!';
+                btn.style.background = '#00ff88';
+                setTimeout(() => {
+                    btn.textContent = original;
+                    btn.style.background = '';
+                }, 2000);
+            });
+        }
+
+        // Link Masking Demo
+        document.getElementById('mainUrl').addEventListener('blur', function() {
+            if(this.value) demoMasking();
+        });
+
+        function demoMasking() {
+            console.log('🔒 All links will be HIDDEN in address bar!');
+        }
+    </script>
+</body>
+</html>
